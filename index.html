@@ -48,8 +48,8 @@
     <p id="status"></p>
   </div>
 
-  <!-- ✅ Load Twilio SDK from CDN -->
-  <script src="https://media.twiliocdn.com/sdk/js/voice/latest/twilio.min.js"></script>
+  <!-- ✅ Load Twilio Voice SDK from the official stable CDN -->
+  <script src="https://sdk.twilio.com/js/client/v1.13/twilio.min.js"></script>
 
   <script>
     console.log("✅ Page loaded");
@@ -64,7 +64,11 @@
         console.log("🔑 Fetching Twilio token...");
         const response = await fetch("https://outbound-dial-3814.twil.io/token");
         const data = await response.json();
-        console.log("✅ Token fetched:", data.identity);
+        console.log("✅ Token fetched:", data.identity || data.token);
+
+        if (!window.Twilio) {
+          throw new Error("Twilio SDK failed to load. Check script src.");
+        }
 
         device = new Twilio.Device(data.token, {
           logLevel: 1,
