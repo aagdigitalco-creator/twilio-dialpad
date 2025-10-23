@@ -10,11 +10,11 @@
     input, button { margin: 10px; padding: 10px 15px; font-size: 16px; }
     button { cursor: pointer; }
   </style>
-  <!-- ✅ Use the latest Twilio Client SDK -->
-  <script src="https://sdk.twilio.com/js/client/v1.14/twilio.min.js"></script>
+  <!-- ✅ Latest Twilio Voice SDK v2 -->
+  <script src="https://media.twiliocdn.com/sdk/js/voice/latest/twilio-voice.min.js"></script>
 </head>
 <body>
-  <h2>📞 Twilio Dialpad</h2>
+  <h2>📞 Twilio Dialpad (v2 SDK)</h2>
   <input type="text" id="phoneNumber" placeholder="Enter phone number" />
   <button id="callBtn">Call</button>
   <button id="hangupBtn">Hang Up</button>
@@ -29,7 +29,7 @@
     // ✅ Fetch token from Python backend
     async function fetchToken() {
       console.log("🔑 Fetching Twilio token from Python backend...");
-      const response = await fetch("http://127.0.0.1:5000/token"); // your Python backend URL
+      const response = await fetch("http://127.0.0.1:5000/token"); // Python backend URL
       const data = await response.json();
       return data.token;
     }
@@ -39,51 +39,47 @@
         const token = await fetchToken();
         console.log("✅ Token fetched");
 
-        // Initialize Twilio Device
-        device = new Twilio.Device(token, {
-          codecPreferences: ["opus", "pcmu"],
-          fakeLocalDTMF: true,
-          enableRingingState: true,
-          warnings: true
+        // Initialize Twilio Voice Device (v2)
+        device = new Twilio.Voice.Device(token, {
+          edge: 'roaming',       // optional: best for global
+          codecPreferences: ['opus', 'pcmu'],
+          allowIncomingWhileBusy: false
         });
 
-        device.on("ready", () => console.log("✅ Twilio Device Ready"));
-        device.on("error", error => console.error("❌ Device error:", error));
+        // Event listeners
+        device.on('ready', () => console.log("✅ Twilio Device Ready"));
+        device.on('error', (err) => console.error("❌ Device error:", err));
+        device.on('connect', (conn) => console.log("✅ Call connected"));
+        device.on('disconnect', (conn) => console.log("📴 Call disconnected"));
 
       } catch (err) {
         console.error("❌ Failed to init Twilio:", err);
       }
     }
 
-    // Start Twilio only after a user click (browser audio policy)
-    callBtn.addEventListener("click", async () => {
-      if (!device) {
-        console.log("⏳ Initializing Twilio after user click...");
-        await initTwilio();
-        setTimeout(makeCall, 2000); // wait 2s to ensure device is ready
-      } else {
-        makeCall();
-      }
-    });
-
-    function makeCall() {
+    async function makeCall() {
       const number = document.getElementById("phoneNumber").value.trim();
       if (!number) {
         alert("Please enter a phone number");
         return;
       }
 
-      console.log("📞 Dialing:", number);
-      const connection = device.connect({ params: { To: number } });
+      if (!device) {
+        console.log("⏳ Initializing Twilio...");
+        await initTwilio();
+        setTimeout(() => makeCall(), 1000);
+        return;
+      }
 
-      connection.on("accept", () => console.log("✅ Call connected"));
-      connection.on("disconnect", () => console.log("📴 Call disconnected"));
-      connection.on("error", (err) => console.error("❌ Call error:", err));
+      console.log("📞 Dialing:", number);
+      device.connect({ params: { To: number } });
     }
 
+    callBtn.addEventListener("click", makeCall);
     hangupBtn.addEventListener("click", () => {
       if (device) device.disconnectAll();
     });
+
   </script>
 </body>
 </html>
