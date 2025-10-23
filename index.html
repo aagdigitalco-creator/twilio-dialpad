@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <title>Twilio Web Dialpad</title>
-    <script src="https://media.twiliocdn.com/sdk/js/client/v1.13/twilio.min.js"></script>
+    <meta charset="UTF-8" />
+    <title>Twilio Web Dialpad (v2)</title>
+    <script src="https://sdk.twilio.com/js/client/v2.0/twilio.min.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -13,6 +13,14 @@
         justify-content: center;
         height: 100vh;
         background: #f8f9fa;
+      }
+      #number {
+        font-size: 22px;
+        margin-bottom: 15px;
+        height: 30px;
+        min-width: 220px;
+        text-align: center;
+        border-bottom: 2px solid #007bff;
       }
       #dialpad {
         display: grid;
@@ -31,27 +39,19 @@
       button:hover {
         background: #0056b3;
       }
-      #number {
-        font-size: 22px;
-        margin-bottom: 15px;
-        height: 30px;
-        min-width: 200px;
-        text-align: center;
-        border-bottom: 2px solid #007bff;
-      }
       #controls {
         margin-top: 20px;
       }
     </style>
   </head>
   <body>
-    <h2>Twilio Web Dialpad</h2>
-    <div id="number"></div>
+    <h2>Twilio Web Dialpad (v2)</h2>
+    <div id="number" contenteditable="true" placeholder="Enter number"></div>
     <div id="dialpad">
       <button>1</button><button>2</button><button>3</button>
       <button>4</button><button>5</button><button>6</button>
       <button>7</button><button>8</button><button>9</button>
-      <button>*</button><button>0</button><button>#</button>
+      <button>+</button><button>0</button><button>#</button>
     </div>
     <div id="controls">
       <button id="call">📞 Call</button>
@@ -59,64 +59,48 @@
     </div>
 
     <script>
-      const numberDisplay = document.getElementById('number');
-      const callButton = document.getElementById('call');
-      const hangupButton = document.getElementById('hangup');
-
       let device;
-      let ready = false;
+      const numberDisplay = document.getElementById('number');
+      const callBtn = document.getElementById('call');
+      const hangupBtn = document.getElementById('hangup');
 
-      // Build number on dialpad clicks
-      document.querySelectorAll('#dialpad button').forEach(btn => {
+      // Enable keyboard input
+      document.addEventListener('keydown', (e) => {
+        if (/[\d#+]/.test(e.key)) numberDisplay.textContent += e.key;
+        if (e.key === 'Backspace')
+          numberDisplay.textContent = numberDisplay.textContent.slice(0, -1);
+      });
+
+      document.querySelectorAll('#dialpad button').forEach((btn) => {
         btn.addEventListener('click', () => {
           numberDisplay.textContent += btn.textContent;
         });
       });
 
       async function initTwilio() {
-        try {
-          console.log('🔄 Fetching token...');
-          const response = await fetch('https://outbound-dial-3814.twil.io/token');
-          const data = await response.json();
+        console.log('Fetching Twilio token...');
+        const res = await fetch('https://outbound-dial-3814.twil.io/token');
+        const data = await res.json();
 
-          device = new Twilio.Device();
+        Twilio.Device.setup(data.token, { debug: true });
 
-          device.setup(data.token, {
-            codecPreferences: ['opus', 'pcmu'],
-            fakeLocalDTMF: true,
-            enableRingingState: true
-          });
-
-          device.on('ready', () => {
-            console.log('✅ Twilio Device Ready');
-            ready = true;
-            alert('Twilio Device ready — you can now make calls!');
-          });
-
-          device.on('error', err => console.error('Twilio Error:', err));
-          device.on('connect', conn => console.log('📞 Call started:', conn.parameters));
-          device.on('disconnect', () => console.log('❌ Call ended'));
-        } catch (err) {
-          console.error('Failed to init Twilio:', err);
-          alert('Error initializing Twilio — check console.');
-        }
+        device = Twilio.Device;
+        device.on('ready', () => console.log('✅ Twilio Device Ready'));
+        device.on('error', (err) => console.error('Twilio Error:', err));
+        device.on('connect', () => console.log('📞 Connected!'));
+        device.on('disconnect', () => console.log('❌ Call ended'));
       }
 
-      callButton.onclick = async () => {
-        if (!ready) {
-          await initTwilio();
-          alert('Initializing device... try again in 2 seconds.');
-          return;
-        }
+      callBtn.onclick = () => {
         const to = numberDisplay.textContent.trim();
-        if (!to) return alert('Enter a number to call');
-        console.log('Calling:', to);
-        device.connect({ To: to });
+        if (!to) return alert('Enter a number to call (with country code)');
+        console.log('Dialing:', to);
+        Twilio.Device.connect({ To: to });
       };
 
-      hangupButton.onclick = () => {
-        if (device) device.disconnectAll();
-      };
+      hangupBtn.onclick = () => Twilio.Device.disconnectAll();
+
+      initTwilio();
     </script>
   </body>
 </html>
