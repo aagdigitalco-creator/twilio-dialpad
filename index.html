@@ -6,24 +6,13 @@
   <title>Twilio Dialpad</title>
   <link rel="icon" href="data:," />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 80px;
-      background: #f9f9f9;
-    }
-    input, button {
-      margin: 10px;
-      padding: 10px 15px;
-      font-size: 16px;
-    }
+    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 80px; background: #f9f9f9; }
+    input, button { margin: 10px; padding: 10px 15px; font-size: 16px; }
     button { cursor: pointer; }
   </style>
 
-  <!-- ✅ Correct Twilio Voice SDK for browser -->
-  <script src="https://sdk.twilio.com/js/voice/latest/twilio.min.js"></script>
+  <!-- ✅ Correct Twilio Client SDK -->
+  <script src="https://media.twiliocdn.com/sdk/js/client/v1.14/twilio.min.js"></script>
 </head>
 <body>
   <h2>📞 Twilio Dialpad</h2>
@@ -37,7 +26,6 @@
     let device;
     let deviceReady = false;
 
-    // ✅ Fetch token from Python backend
     async function fetchToken() {
       console.log("🔑 Fetching Twilio token from Python backend...");
       const response = await fetch("http://127.0.0.1:5000/token");
@@ -45,9 +33,13 @@
       return data.token;
     }
 
-    // ✅ Initialize Twilio Device
     async function initTwilio() {
       if (deviceReady) return;
+
+      if (typeof Twilio === 'undefined') {
+        console.error("❌ Twilio SDK not loaded!");
+        return;
+      }
 
       try {
         const token = await fetchToken();
@@ -74,19 +66,14 @@
       }
     }
 
-    // ✅ Make a call
     async function makeCall() {
       const number = document.getElementById("phoneNumber").value.trim();
-      if (!number) {
-        alert("Please enter a phone number");
-        return;
-      }
+      if (!number) { alert("Please enter a phone number"); return; }
 
       if (!deviceReady) {
         console.log("⏳ Initializing Twilio first...");
         await initTwilio();
-        setTimeout(makeCall, 1000); // wait for device to be ready
-        return;
+        return; // stop retrying endlessly
       }
 
       console.log("📞 Dialing:", number);
@@ -94,10 +81,7 @@
     }
 
     callBtn.addEventListener("click", makeCall);
-
-    hangupBtn.addEventListener("click", () => {
-      if (device) device.disconnectAll();
-    });
+    hangupBtn.addEventListener("click", () => { if (device) device.disconnectAll(); });
   </script>
 </body>
 </html>
