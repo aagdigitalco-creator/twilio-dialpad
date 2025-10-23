@@ -2,8 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Twilio Web Dialpad (v2)</title>
-    <script src="https://sdk.twilio.com/js/voice/latest/twilio-voice.min.js"></script>
+    <title>Twilio Web Dialpad (v2 Fixed)</title>
+
+    <!-- ✅ Correct CDN for Twilio Voice SDK -->
+    <script src="https://sdk.twilio.com/js/client/v1.13/twilio.min.js"></script>
+
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -49,7 +52,7 @@
     </style>
   </head>
   <body>
-    <h2>Twilio Web Dialpad (v2)</h2>
+    <h2>Twilio Web Dialpad</h2>
     <div id="number" contenteditable="true" placeholder="Enter number"></div>
     <div id="dialpad">
       <button>1</button><button>2</button><button>3</button>
@@ -65,57 +68,66 @@
 
     <script>
       let device;
-      const numberDisplay = document.getElementById('number');
-      const callBtn = document.getElementById('call');
-      const hangupBtn = document.getElementById('hangup');
-      const status = document.getElementById('status');
+      const numberDisplay = document.getElementById("number");
+      const callBtn = document.getElementById("call");
+      const hangupBtn = document.getElementById("hangup");
+      const status = document.getElementById("status");
 
-      // Keyboard input
-      document.addEventListener('keydown', (e) => {
+      // Keyboard typing for number field
+      document.addEventListener("keydown", (e) => {
         if (/[\d#+]/.test(e.key)) numberDisplay.textContent += e.key;
-        if (e.key === 'Backspace')
+        if (e.key === "Backspace")
           numberDisplay.textContent = numberDisplay.textContent.slice(0, -1);
       });
 
-      document.querySelectorAll('#dialpad button').forEach((btn) => {
-        btn.addEventListener('click', () => {
+      document.querySelectorAll("#dialpad button").forEach((btn) => {
+        btn.addEventListener("click", () => {
           numberDisplay.textContent += btn.textContent;
         });
       });
 
       async function initTwilio() {
-        console.log('Fetching Twilio token...');
-        const res = await fetch('https://outbound-dial-3814.twil.io/token');
+        console.log("Fetching Twilio token...");
+        const res = await fetch("https://outbound-dial-3814.twil.io/token");
         const data = await res.json();
 
-        // New SDK usage
-        device = new TwilioVoice.Device(data.token, { logLevel: 1 });
-        device.on('ready', () => {
-          console.log('✅ Twilio Device Ready');
-          status.textContent = '✅ Ready to call';
+        // ✅ Use Twilio.Device (since v1.13 supports this)
+        device = new Twilio.Device(data.token, { debug: true });
+
+        device.on("ready", () => {
+          console.log("✅ Twilio Device Ready");
+          status.textContent = "✅ Ready to call";
         });
-        device.on('error', (err) => {
-          console.error('Twilio Error:', err);
-          status.textContent = '❌ Error: ' + err.message;
+
+        device.on("error", (err) => {
+          console.error("❌ Twilio Error:", err);
+          status.textContent = "❌ Error: " + err.message;
         });
-        device.on('connect', () => {
-          console.log('📞 Connected!');
-          status.textContent = '📞 Connected...';
+
+        device.on("connect", () => {
+          console.log("📞 Connected!");
+          status.textContent = "📞 Connected...";
         });
-        device.on('disconnect', () => {
-          console.log('❌ Call ended');
-          status.textContent = 'Call ended.';
+
+        device.on("disconnect", () => {
+          console.log("❌ Call ended");
+          status.textContent = "Call ended.";
         });
       }
 
       callBtn.onclick = () => {
         const to = numberDisplay.textContent.trim();
-        if (!to) return alert('Enter a number to call (with country code)');
-        console.log('Dialing:', to);
-        status.textContent = '📲 Calling ' + to + '...';
-        device.connect({ params: { To: to } });
+        if (!to) return alert("Enter a number to call (with country code)");
+        console.log("Dialing:", to);
+        status.textContent = "📲 Calling " + to + "...";
+        device.connect({ To: to });
       };
 
       hangupBtn.onclick = () => {
         if (device) device.disconnectAll();
-        status.textContent = 'Call hung up.'
+        status.textContent = "Call hung up.";
+      };
+
+      initTwilio();
+    </script>
+  </b
