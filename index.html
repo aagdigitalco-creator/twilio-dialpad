@@ -3,56 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Twilio Web Dialpad</title>
+  <title>Twilio Dialpad</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #dialpad {
+      background-color: #1e1e1e;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      width: 300px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+    }
+    #display {
+      background-color: #000;
+      color: #0f0;
+      font-size: 22px;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      height: 40px;
+      text-align: right;
+    }
+    .btn {
+      width: 60px;
+      height: 60px;
+      margin: 5px;
+      font-size: 20px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover {
+      background-color: #555;
+    }
+    .action {
+      background-color: #007bff;
+      border-radius: 8px;
+      width: 120px;
+    }
+    .action:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-  <h2>Web Dialpad</h2>
-  <input id="phoneNumber" placeholder="+1XXXXXXXXXX" />
-  <button id="callBtn">Call</button>
-  <button id="hangupBtn">Hang Up</button>
+  <div id="dialpad">
+    <div id="display"></div>
+    <div>
+      <button class="btn">1</button>
+      <button class="btn">2</button>
+      <button class="btn">3</button><br>
+      <button class="btn">4</button>
+      <button class="btn">5</button>
+      <button class="btn">6</button><br>
+      <button class="btn">7</button>
+      <button class="btn">8</button>
+      <button class="btn">9</button><br>
+      <button class="btn">*</button>
+      <button class="btn">0</button>
+      <button class="btn">#</button><br>
+      <button id="call" class="action">Call</button>
+      <button id="hangup" class="action" style="background-color:red;">Hangup</button>
+    </div>
+  </div>
 
-  <!-- ✅ Use latest Twilio Voice SDK v2 -->
+  <!-- ✅ Load the Twilio Voice SDK first -->
   <script src="https://media.twiliocdn.com/sdk/js/voice/releases/2.7.2/twilio-voice.min.js"></script>
 
-  <script>
-    console.log("✅ Page loaded");
-
-    const callBtn = document.getElementById("callBtn");
-    const hangupBtn = document.getElementById("hangupBtn");
-    let device, activeConnection;
-
-    async function initTwilio() {
-      console.log("🔑 Fetching Twilio token...");
-      const res = await fetch("https://outbound-dial-3814.twil.io/token");
-      const data = await res.json();
-
-      device = new Twilio.Voice.Client.Device(data.token, {
-        codecPreferences: ["opus", "pcmu"],
-        logLevel: 1,
-      });
-
-      device.on('ready', () => console.log("✅ Device ready"));
-      device.on('error', (e) => console.error("❌ Twilio Error:", e));
-      device.on('disconnect', () => console.log("🛑 Call ended"));
-    }
-
-    callBtn.onclick = () => {
-      const number = document.getElementById("phoneNumber").value.trim();
-      if (!number) return alert("Enter a phone number first!");
-      if (!device) return alert("Device not ready yet!");
-
-      console.log("📞 Dialing:", number);
-      activeConnection = device.connect({ params: { To: number } });
-    };
-
-    hangupBtn.onclick = () => {
-      if (activeConnection) {
-        console.log("🛑 Hanging up call...");
-        activeConnection.disconnect();
-      }
-    };
-
-    initTwilio();
-  </script>
+  <!-- ✅ Then your JS file -->
+  <script src="twilio-dialpad.js"></script>
 </body>
 </html>
