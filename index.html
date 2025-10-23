@@ -11,38 +11,45 @@
   <button id="callBtn">Call</button>
   <button id="hangupBtn">Hang Up</button>
 
-  <script src="https://media.twiliocdn.com/sdk/js/voice/latest/twilio-voice.min.js"></script>
+  <!-- ✅ Use latest Twilio Voice SDK v2 -->
+  <script src="https://media.twiliocdn.com/sdk/js/voice/releases/2.7.2/twilio-voice.min.js"></script>
+
   <script>
     console.log("✅ Page loaded");
 
     const callBtn = document.getElementById("callBtn");
     const hangupBtn = document.getElementById("hangupBtn");
-    let device, connection;
+    let device, activeConnection;
 
     async function initTwilio() {
       console.log("🔑 Fetching Twilio token...");
       const res = await fetch("https://outbound-dial-3814.twil.io/token");
       const data = await res.json();
 
-      device = new Twilio.Device(data.token, {
-        debug: true,
+      device = new Twilio.Voice.Client.Device(data.token, {
         codecPreferences: ["opus", "pcmu"],
+        logLevel: 1,
       });
 
-      device.on("ready", () => console.log("✅ Device ready"));
-      device.on("error", (err) => console.error("❌ Twilio Error:", err));
-      device.on("disconnect", () => console.log("🛑 Call ended"));
+      device.on('ready', () => console.log("✅ Device ready"));
+      device.on('error', (e) => console.error("❌ Twilio Error:", e));
+      device.on('disconnect', () => console.log("🛑 Call ended"));
     }
 
     callBtn.onclick = () => {
-      const number = document.getElementById("phoneNumber").value;
+      const number = document.getElementById("phoneNumber").value.trim();
+      if (!number) return alert("Enter a phone number first!");
+      if (!device) return alert("Device not ready yet!");
+
       console.log("📞 Dialing:", number);
-      if (!device) return console.error("Device not ready yet");
-      connection = device.connect({ params: { To: number } });
+      activeConnection = device.connect({ params: { To: number } });
     };
 
     hangupBtn.onclick = () => {
-      if (connection) connection.disconnect();
+      if (activeConnection) {
+        console.log("🛑 Hanging up call...");
+        activeConnection.disconnect();
+      }
     };
 
     initTwilio();
