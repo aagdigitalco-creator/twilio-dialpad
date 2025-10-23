@@ -34,6 +34,10 @@
       #number {
         font-size: 22px;
         margin-bottom: 15px;
+        height: 30px;
+        min-width: 200px;
+        text-align: center;
+        border-bottom: 2px solid #007bff;
       }
       #controls {
         margin-top: 20px;
@@ -60,7 +64,9 @@
       const hangupButton = document.getElementById('hangup');
 
       let device;
+      let ready = false;
 
+      // Build number on dialpad clicks
       document.querySelectorAll('#dialpad button').forEach(btn => {
         btn.addEventListener('click', () => {
           numberDisplay.textContent += btn.textContent;
@@ -68,26 +74,49 @@
       });
 
       async function initTwilio() {
-        const response = await fetch('https://outbound-dial-3814.twil.io/token');
-        const data = await response.json();
-        device = new Twilio.Device(data.token);
-        device.on('ready', () => console.log('Twilio device ready'));
+        try {
+          console.log('🔄 Fetching token...');
+          const response = await fetch('https://outbound-dial-3814.twil.io/token');
+          const data = await response.json();
+
+          device = new Twilio.Device();
+
+          device.setup(data.token, {
+            codecPreferences: ['opus', 'pcmu'],
+            fakeLocalDTMF: true,
+            enableRingingState: true
+          });
+
+          device.on('ready', () => {
+            console.log('✅ Twilio Device Ready');
+            ready = true;
+            alert('Twilio Device ready — you can now make calls!');
+          });
+
+          device.on('error', err => console.error('Twilio Error:', err));
+          device.on('connect', conn => console.log('📞 Call started:', conn.parameters));
+          device.on('disconnect', () => console.log('❌ Call ended'));
+        } catch (err) {
+          console.error('Failed to init Twilio:', err);
+          alert('Error initializing Twilio — check console.');
+        }
       }
 
-      callButton.onclick = () => {
+      callButton.onclick = async () => {
+        if (!ready) {
+          await initTwilio();
+          alert('Initializing device... try again in 2 seconds.');
+          return;
+        }
         const to = numberDisplay.textContent.trim();
         if (!to) return alert('Enter a number to call');
+        console.log('Calling:', to);
         device.connect({ To: to });
       };
 
       hangupButton.onclick = () => {
         if (device) device.disconnectAll();
       };
-
-      initTwilio();
     </script>
   </body>
 </html>
-
-
-
