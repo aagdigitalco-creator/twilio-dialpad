@@ -4,15 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Twilio Dialpad</title>
-  <link rel="icon" href="data:," />
   <style>
     body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; margin-top: 80px; background: #f9f9f9; }
     input, button { margin: 10px; padding: 10px 15px; font-size: 16px; }
     button { cursor: pointer; }
   </style>
 
-  <!-- ✅ Latest Twilio JS SDK for Voice -->
-  <script src="https://media.twiliocdn.com/sdk/js/voice/latest/twilio.min.js"></script>
+  <!-- ✅ Twilio Voice SDK v2 -->
+  <script src="https://sdk.twilio.com/js/client/v2.0/twilio.min.js"></script>
 </head>
 <body>
   <h2>📞 Twilio Dialpad</h2>
@@ -27,7 +26,7 @@
     let deviceReady = false;
 
     async function fetchToken() {
-      const res = await fetch("http://127.0.0.1:5000/token"); // Your Python backend
+      const res = await fetch("http://127.0.0.1:5000/token"); // Python backend
       const data = await res.json();
       return data.token;
     }
@@ -38,10 +37,7 @@
       const token = await fetchToken();
       console.log("✅ Token fetched");
 
-      device = new Twilio.Device(token, {
-        codecPreferences: ["opus", "pcmu"],
-        enableRingingState: true
-      });
+      device = new Twilio.Device(token);
 
       device.on("ready", () => {
         console.log("✅ Device Ready");
@@ -69,7 +65,7 @@
       if (device) device.disconnectAll();
     });
 
-    // ✅ Optional: init immediately on page load
+    // Optional: auto-init
     initDevice();
   </script>
 </body>
