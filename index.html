@@ -1,1 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Twilio Web Dialpad</title>
+    <script src="https://media.twiliocdn.com/sdk/js/client/v1.13/twilio.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background: #f8f9fa;
+      }
+      #dialpad {
+        display: grid;
+        grid-template-columns: repeat(3, 80px);
+        gap: 10px;
+      }
+      button {
+        font-size: 20px;
+        padding: 15px;
+        border-radius: 10px;
+        border: none;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      #number {
+        font-size: 22px;
+        margin-bottom: 15px;
+      }
+      #controls {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Twilio Web Dialpad</h2>
+    <div id="number"></div>
+    <div id="dialpad">
+      <button>1</button><button>2</button><button>3</button>
+      <button>4</button><button>5</button><button>6</button>
+      <button>7</button><button>8</button><button>9</button>
+      <button>*</button><button>0</button><button>#</button>
+    </div>
+    <div id="controls">
+      <button id="call">📞 Call</button>
+      <button id="hangup">❌ Hangup</button>
+    </div>
+
+    <script>
+      const numberDisplay = document.getElementById('number');
+      const callButton = document.getElementById('call');
+      const hangupButton = document.getElementById('hangup');
+
+      let device;
+
+      document.querySelectorAll('#dialpad button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          numberDisplay.textContent += btn.textContent;
+        });
+      });
+
+      async function initTwilio() {
+        const response = await fetch('https://outbound-dial-3814.twil.io/token');
+        const data = await response.json();
+        device = new Twilio.Device(data.token);
+        device.on('ready', () => console.log('Twilio device ready'));
+      }
+
+      callButton.onclick = () => {
+        const to = numberDisplay.textContent.trim();
+        if (!to) return alert('Enter a number to call');
+        device.connect({ To: to });
+      };
+
+      hangupButton.onclick = () => {
+        if (device) device.disconnectAll();
+      };
+
+      initTwilio();
+    </script>
+  </body>
+</html>
+
 
